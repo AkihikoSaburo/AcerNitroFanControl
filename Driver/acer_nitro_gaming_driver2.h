@@ -95,6 +95,7 @@ extern int wmi_probe(struct wmi_device *wdev, const void *notuseful);
  * Returns: Number of bytes written or negative error code
  */
 extern ssize_t cdev_user_write(struct file *file, const char __user *buff, size_t count, loff_t *offset);
+extern ssize_t cdev_user_read(struct file *file, char __user *buf, size_t count, loff_t *ppos); // ← tambahkan ini
 
 /**
  * chdev_uevent - Character device uevent callback

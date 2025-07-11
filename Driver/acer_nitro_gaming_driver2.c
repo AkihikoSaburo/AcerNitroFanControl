@@ -21,6 +21,7 @@ dev_t cdev;
 static struct file_operations cfops = {
     .owner = THIS_MODULE,
     .write = cdev_user_write,
+    .read = cdev_user_read,
     .open = chdev_open,
     .release = chdev_release
 };
@@ -111,6 +112,22 @@ out_free:
     kfree(kbfr);
     return ret;
 }
+
+static int fan_speed[2] = {DEFAULT_FAN_SPEED, DEFAULT_FAN_SPEED};
+
+ssize_t cdev_user_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) {
+    int cdev_minor = MINOR(file->f_path.dentry->d_inode->i_rdev);
+    char status[32];
+    int len;
+
+    if (cdev_minor < 0 || cdev_minor > 1)
+        return -EINVAL;
+
+    len = snprintf(status, sizeof(status), "FAN%d: %d\n", cdev_minor + 1, fan_speed[cdev_minor]);
+
+    return simple_read_from_buffer(buf, count, ppos, status, len);
+}
+
 
 extern int chdev_open(struct inode *inode, struct file *file) {
     try_module_get(THIS_MODULE);
@@ -217,6 +234,7 @@ unsigned concatenate(unsigned x, unsigned y) {
 extern int fan_set_speed(int speed, int fan) {
     int merged = concatenate(speed, fan);
     pr_info("Setting fan %d to speed %d (merged: %d)", fan, speed, merged);
+    fan_speed[fan] = speed;  // ← Simpan ke global state
     wmi_eval_int_method(METHOD_SET_FAN, merged);
     return 0;
 }
